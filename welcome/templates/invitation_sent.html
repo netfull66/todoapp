@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitation Sent</title>
+</head>
+<body>
+    <h1>Invitation Sent</h1>
+    <p>An invitation has been sent to {{ email }}. Please ask the recipient to check their inbox.</p>
+    <p><a href="{% url 'project_detail' project.id %}">Back to Project</a></p>
+</body>
+</html>

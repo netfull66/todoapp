@@ -1,0 +1,20 @@
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="task_name">Task Name:</label>
+    <input type="text" id="task_name" name="task_name" required>
+
+    {% if user.subscription_type == 'pro' %}
+        <label for="project_id">Project (Optional):</label>
+        <select id="project_id" name="project_id">
+            <option value="">--Select a Project--</option>
+            {% for project in projects %}
+                <option value="{{ project.id }}">{{ project }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="file">Upload File:</label>
+        <input type="file" id="file" name="file">
+    {% endif %}
+
+    <button type="submit">Create Task</button>
+</form>

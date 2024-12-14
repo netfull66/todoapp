@@ -1,0 +1,5 @@
+<form method="POST">
+    {% csrf_token %}
+    <p>You were invited by {{ invitation.team_leader.username }}.</p>
+    <button type="submit">Accept Invitation</button>
+</form>

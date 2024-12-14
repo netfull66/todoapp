@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Management Dashboard UI</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<link href="https://fonts.googleapis.com/css?family=DM+Sans:400,500,700&display=swap" rel="stylesheet">
+<div class="task-manager">
+  <div class="left-bar">
+    <div class="upper-part">
+      <div class="actions">
+        <div class="circle"></div>
+        <div class="circle-2"></div>
+      </div>
+    </div>
+    <div class="left-content">
+      <ul class="action-list">
+        {% for category in categories %}
+        <li class="item">
+          <a href="/tasks/category/{{ category.id }}/">
+            <span>{{ category.name }}</span>
+          </a>
+        </li>
+        {% endfor %}
+        <a href="/create-category/" class="create-task-btn">Create Category</a>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="page-content">
+    <div class="header">
+      Today Tasks
+      <a href="/subscribe/pro/" class="pro-subscription-btn">Go Pro</a> <!-- Pro Subscription Button -->
+    </div>
+    <a href="/create-task/" class="create-task-btn">+ Create Task</a>
+    
+    <!-- Tasks Section -->
+    <div class="tasks-wrapper" id="tasks-wrapper">
+      {% if user.is_authenticated %}
+        {% if user.subscription_type == 'pro' %}
+          <h3>Pro User Tasks</h3>
+          {% for task in pro_tasks %}
+            <div class="task">
+              <input 
+                class="task-item" 
+                name="task" 
+                type="checkbox" 
+                id="item-{{ task.id }}" 
+                {% if task.is_done %}checked{% endif %}
+                data-task-id="{{ task.id }}"
+                onchange="handleTaskToggle(this)"
+              >
+              <label for="item-{{ task.id }}">
+                <span class="label-text">{{ task.task_name }}</span>
+              </label>
+              <!-- File upload section for Pro users -->
+              <div class="file-upload" id="file-upload-{{ task.id }}" style="display: none;">
+                <form id="upload-form-{{ task.id }}" method="POST" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <input type="file" name="file" required>
+                  <button type="button" onclick="submitUpload({{ task.id }})">Upload</button>
+                </form>
+              </div>
+              {% if task.feedback %}
+                <div class="task-feedback">
+                  <strong>Feedback:</strong> {{ task.feedback }}
+                </div>
+              {% endif %}
+            </div>
+          {% empty %}
+            <p>No tasks available.</p>
+          {% endfor %}
+        {% else %}
+          <h3>Logged User Tasks</h3>
+          {% for task in logged_tasks %}
+            <div class="task">
+                <input 
+                class="task-item" 
+                name="task" 
+                type="checkbox" 
+                id="item-{{ task.id }}" 
+                {% if task.is_done %}checked{% endif %}
+                data-task-id="{{ task.id }}"
+                onchange="handleTaskToggle(this)"
+              >
+              <label for="item-{{ task.id }}">
+                <span class="label-text">{{ task.task_name }}</span>
+              </label>
+              
+            </div>
+          {% empty %}
+            <p>No tasks available.</p>
+          {% endfor %}
+        {% endif %}
+      {% else %}
+        <h3>Unlogged User Tasks</h3>
+        {% for task in unlogged_tasks %}
+          <div class="task">
+            <input 
+              class="task-item" 
+              name="task" 
+              type="checkbox" 
+              id="item-{{ task.id }}" 
+              {% if task.is_done %}checked{% endif %}
+              data-task-id="{{ task.id }}"
+              onchange="handleTaskToggle(this)"
+            >
+            <label for="item-{{ task.id }}">
+              <span class="label-text">{{ task.task_name }}</span>
+            </label>
+          </div>
+        {% empty %}
+          <p>No tasks available.</p>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .create-task-btn {
+    float: right;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+  .create-task-btn:hover {
+    background-color: #0056b3;
+  }
+
+  .pro-subscription-btn {
+    float: right;
+    margin-right: 15px;
+    background-color: #28a745;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+  .pro-subscription-btn:hover {
+    background-color: #218838;
+  }
+
+  .header {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
+
+<script>
+  function handleTaskToggle(checkbox) {
+    const taskId = checkbox.dataset.taskId;
+    const isDone = checkbox.checked;
+
+    // Update task status
+    fetch(`/update_task_status/${taskId}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify({ is_done: isDone }),  // Send status change in request body
+    })
+    .then((response) => {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error("Failed to update task status.");
+      }
+    })
+    .then((data) => {
+      console.log("Task status updated:", data);
+      // Optionally: Show or hide the file upload section for Pro users
+      const fileUploadSection = document.getElementById(`file-upload-${taskId}`);
+      if (isDone) {
+        fileUploadSection.style.display = "block"; // Show file upload if task is done
+      } else {
+        fileUploadSection.style.display = "none"; // Hide file upload if task is not done
+      }
+    })
+    .catch((error) => {
+      console.error("Error updating task status:", error);
+      checkbox.checked = !isDone;  // Revert checkbox on error
+    });
+  }
+
+  // Helper function to retrieve CSRF token from cookies
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+
+  // Helper function to retrieve CSRF token from cookies
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+
+<script>
+
+function handleTaskToggle(checkbox) {
+  const taskId = checkbox.dataset.taskId;
+  const isDone = checkbox.checked;
+
+  // Update task status in the backend
+  fetch(`/update_task_status/${taskId}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({ is_done: isDone }),  // Send status change in request body
+  })
+  .then((response) => {
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw new Error("Failed to update task status.");
+    }
+  })
+  .then((data) => {
+    console.log("Task status updated:", data);
+    // Optionally: Show or hide the file upload section for Pro users
+    const fileUploadSection = document.getElementById(`file-upload-${taskId}`);
+    if (isDone) {
+      fileUploadSection.style.display = "block"; // Show file upload if task is done
+    } else {
+      fileUploadSection.style.display = "none"; // Hide file upload if task is not done
+    }
+  })
+  .catch((error) => {
+    console.error("Error updating task status:", error);
+    checkbox.checked = !isDone;  // Revert checkbox on error
+  });
+}
+
+
+  function submitUpload(taskId) {
+    const form = document.getElementById(`upload-form-${taskId}`);
+    const formData = new FormData(form);
+
+    fetch(`/upload_task_file/${taskId}/`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+    })
+    .then((response) => {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error("Failed to upload file.");
+      }
+    })
+    .then((data) => {
+      console.log("File uploaded successfully:", data);
+      alert("File uploaded successfully!");
+    })
+    .catch((error) => {
+      console.error("Error uploading file:", error);
+    });
+  }
+</script>
+
+</body>
+</html>
