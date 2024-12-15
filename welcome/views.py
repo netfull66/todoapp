@@ -12,6 +12,8 @@ import uuid
 from django.urls import reverse
 from django.conf import settings
 from django.utils import timezone
+from django.http import HttpResponseForbidden
+
 
 # Function to handle user registration
 def register_view(request):
@@ -382,4 +384,109 @@ def view_project_tasks(request, project_id):
     return render(request, 'project_tasks.html', {
         'project': project,
         'tasks': tasks,
+    })
+
+
+@login_required
+def reassign_task(request, task_id):
+    # Fetch the task
+    task = get_object_or_404(ProUserTask, id=task_id)
+
+    # Ensure the user has permission to reassign the task
+    if request.user != task.project.created_by and request.user.role != 'team_leader':
+        return HttpResponseForbidden("You do not have permission to reassign this task.")
+    
+    if request.method == 'POST':
+        # Get the new assignee's ID from the form
+        new_assignee_id = request.POST.get('assigned_to')
+        new_assignee = get_object_or_404(CustomUser, id=new_assignee_id)
+
+        # Validate that the new assignee is a member of the project
+        if new_assignee not in task.project.members.all():
+            return HttpResponseForbidden("The selected user is not a member of this project.")
+
+        # Reassign the task
+        task.assigned_to = new_assignee
+        task.save()
+
+        # Redirect to the project detail page
+        return redirect('project_detail', project_id=task.project.id)
+
+    # Fetch the project members for the dropdown
+    project_members = task.project.members.all()
+    return render(request, 'reassign_task.html', {
+        'task': task,
+        'project_members': project_members,
+    })
+
+
+@login_required
+def project_detail(request, project_id):
+    # Fetch the project or return a 404 if it doesn't exist
+    project = get_object_or_404(Project, id=project_id)
+
+    # Ensure the user is either the project creator or a member of the project
+    if request.user != project.created_by and request.user not in project.members.all():
+        return HttpResponseForbidden("You do not have permission to view this project.")
+
+    # Fetch tasks related to this project
+    tasks = project.tasks.all()
+
+    # Debugging output to confirm task query results
+    print(f"Tasks for project {project_id}: {tasks}")
+
+    # Render the project details page
+    return render(request, 'project_detail.html', {
+        'project': project,
+        'tasks': tasks,
+        'members': project.members.all()
+    })
+
+@login_required
+def task_detail(request, task_id):
+    task = get_object_or_404(ProUserTask, id=task_id)
+    project = task.project
+
+    # Ensure that the current user is the project leader
+    if project.created_by != request.user:
+        return HttpResponseForbidden("You are not authorized to manage tasks for this project.")
+
+    # Handle feedback submission (approve or refuse)
+    if request.method == "POST":
+        action = request.POST.get('action')
+        feedback_text = request.POST.get('feedback')
+
+        if action == "approve":
+            # Approve the task and mark it as done
+            task_feedback, created = TaskFeedback.objects.get_or_create(task=task)
+            task_feedback.approved = True
+            task_feedback.feedback = ""
+            task_feedback.save()
+
+            # Mark the task as done
+            task.mark_as_done()
+
+        elif action == "refuse":
+            # Refuse the task and save feedback
+            task_feedback, created = TaskFeedback.objects.get_or_create(task=task)
+            task_feedback.approved = False
+            task_feedback.feedback = feedback_text
+            task_feedback.save()
+
+            # Task remains not done
+            task.is_done = False
+            task.save()
+
+            # Delete the uploaded file if it exists
+            if task.uploaded_file:
+                task.uploaded_file.delete()
+
+        return redirect('project_detail', project_id=project.id)
+
+    # Get the current feedback for the task (if any)
+    feedback = TaskFeedback.objects.filter(task=task).first()
+
+    return render(request, 'task_detail.html', {
+        'task': task,
+        'feedback': feedback
     })

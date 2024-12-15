@@ -51,19 +51,22 @@ class LoggedUserTask(models.Model):
     def __str__(self):
         return self.task_name
 
-# Model for pro user tasks
 class ProUserTask(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)  # Task creator
     task_name = models.CharField(max_length=255)
     project = models.ForeignKey(
         'Project', on_delete=models.CASCADE, null=True, blank=True, related_name='tasks'
-    )  # Add a related_name for reverse querying
+    )  # Related name for reverse querying tasks by project
+    assigned_to = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks'
+    )  # User to whom the task is assigned
     uploaded_file = models.FileField(upload_to='task_files/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_done = models.BooleanField(default=False)  # Add the is_done field
+    is_done = models.BooleanField(default=False)
 
     def __str__(self):
         return self.task_name
+
 
 
 class Project(models.Model):

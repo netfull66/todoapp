@@ -30,7 +30,10 @@ urlpatterns = [
     path('export_project_files/<int:project_id>/', views.export_project_files, name='export_project_files'),
 
     path('project/<int:project_id>/tasks/', views.view_project_tasks, name='view_project_tasks'),
+    path('project/<int:project_id>/', views.project_detail, name='project_detail'),
+    path('task/<int:task_id>/', views.task_detail, name='task_detail'),
 
+    path('task/<int:task_id>/reassign/', views.reassign_task, name='reassign_task'),
 
     # Authentication URLs
     path('register/', views.register_view, name='register'),
