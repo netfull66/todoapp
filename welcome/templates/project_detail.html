@@ -18,16 +18,7 @@
       </div>
     </div>
     <div class="left-content">
-      <ul class="action-list">
-        {% for category in categories %}
-        <li class="item">
-          <a href="/tasks/category/{{ category.id }}/">
-            <span>{{ category.name }}</span>
-          </a>
-        </li>
-        {% endfor %}
-        <a href="/create-category/" class="create-task-btn">Create Category</a>
-      </ul>
+
     </div>
   </div>
   
@@ -58,7 +49,7 @@
     <div class="tasks-section">
       <div class="section-header">
         <h2>Today’s Tasks</h2>
-        <a href="/project/{{project.id}}/assign_task" class="create-task-btn">+ Create Task</a>
+        <a href="/create-task" class="create-task-btn">+ Create Task</a>
       </div>
       <div class="tasks-wrapper">
         {% if tasks %}

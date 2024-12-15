@@ -17,16 +17,7 @@
       </div>
     </div>
     <div class="left-content">
-      <ul class="action-list">
-        {% for category in categories %}
-        <li class="item">
-          <a href="/tasks/category/{{ category.id }}/">
-            <span>{{ category.name }}</span>
-          </a>
-        </li>
-        {% endfor %}
-        <a href="/create-category/" class="create-task-btn">Create Category</a>
-      </ul>
+
     </div>
   </div>
   
@@ -40,7 +31,7 @@
     <div class="projects-section">
       <div class="section-header">
         <h2>Projects</h2>
-        <a href="/create_project/" class="create-task-btn">+ Create Project</a>
+        <a href="/create-project/" class="create-task-btn">+ Create Project</a>
       </div>
       <div class="projects-wrapper">
         {% for project in projects %}

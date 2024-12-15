@@ -1,17 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="../static/style.css">
+  <style>
+    .form-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  background-color: var(--bg-color);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--main-text-color);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f7f8fc;
+}
+
+.form-group input:focus {
+  border-color: var(--checkbox-color);
+  outline: none;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.form-footer a {
+  color: var(--checkbox-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.form-footer a:hover {
+  text-decoration: underline;
+}
+.wide-blue-btn {
+  display: block; /* Makes the button span the full width of its container */
+  width: 100%; /* Full width */
+  padding: 15px 20px; /* Padding for a balanced appearance */
+  background-color: #007bff; /* Blue color */
+  color: #fff; /* White text */
+  font-size: 16px; /* Slightly larger font size for prominence */
+  font-weight: bold; /* Bold text for emphasis */
+  text-align: center; /* Centers text within the button */
+  text-decoration: none; /* Removes underline for links styled as buttons */
+  border: none; /* Removes border */
+  border-radius: 5px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition for hover effects */
+}
+
+.wide-blue-btn:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  transform: translateY(-2px); /* Slight lift effect */
+}
+
+.wide-blue-btn:active {
+  transform: translateY(0); /* Button returns to original position on click */
+}
+
+  </style>
 </head>
 <body>
-    <h2>Login</h2>
-    <form method="post">
+  <div class="task-manager">
+    <div class="page-content">
+      <div class="header">Login</div>
+      <form action="/login/" method="POST" class="form-container">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account? <a href="{% url 'register' %}">Register here</a>.</p>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required placeholder="Enter your username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required placeholder="Enter your password">
+        </div>
+        <button type="submit" class="wide-blue-btn">Login</button>
+      </form>
+      <p class="form-footer">Don't have an account? <a href="/register/">Register here</a>.</p>
+    </div>
+  </div>
 </body>
 </html>
