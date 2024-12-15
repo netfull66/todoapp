@@ -55,7 +55,9 @@ class LoggedUserTask(models.Model):
 class ProUserTask(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     task_name = models.CharField(max_length=255)
-    project = models.ForeignKey('Project', on_delete=models.CASCADE, null=True, blank=True)
+    project = models.ForeignKey(
+        'Project', on_delete=models.CASCADE, null=True, blank=True, related_name='tasks'
+    )  # Add a related_name for reverse querying
     uploaded_file = models.FileField(upload_to='task_files/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_done = models.BooleanField(default=False)  # Add the is_done field
@@ -63,16 +65,23 @@ class ProUserTask(models.Model):
     def __str__(self):
         return self.task_name
 
-# Model for projects
+
 class Project(models.Model):
     name = models.CharField(max_length=255)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='projects')
+    created_by = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name='projects'
+    )
     start_date = models.DateField()
     end_date = models.DateField()
     members = models.ManyToManyField(CustomUser, related_name='project_members')
 
     def __str__(self):
         return f"Project by {self.created_by.username}"
+
+    # Optional utility method to retrieve all tasks
+    def get_tasks(self):
+        return self.tasks.all()
+
 
 # Model for task feedback
 class TaskFeedback(models.Model):

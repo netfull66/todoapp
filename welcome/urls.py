@@ -29,6 +29,7 @@ urlpatterns = [
     path('download-task-file/<int:task_id>/', views.download_file, name='download_task_file'),
     path('export_project_files/<int:project_id>/', views.export_project_files, name='export_project_files'),
 
+    path('project/<int:project_id>/tasks/', views.view_project_tasks, name='view_project_tasks'),
 
 
     # Authentication URLs

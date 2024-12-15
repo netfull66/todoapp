@@ -51,7 +51,7 @@ def create_task(request):
                 project_id = request.POST.get('project_id')
                 project = get_object_or_404(Project, id=project_id) if project_id else None
                 file = request.FILES.get('file')
-                task = ProUserTask.objects.create(user=request.user, task_name=task_name, project=project, file_upload=file)
+                task = ProUserTask.objects.create(user=request.user, task_name=task_name, project=project)
                 return redirect('dashboard_view')
             else:
                 # Logged user task creation
@@ -136,13 +136,14 @@ def dashboard_view(request):
         if user.subscription_type == 'pro':
             context['pro_tasks'] = ProUserTask.objects.filter(user=user)
             context['projects'] = Project.objects.filter(created_by=user)
+            return render(request, 'pro_programming_tasks.html', context)
         else:
             context['logged_tasks'] = LoggedUserTask.objects.filter(user=user)
+            return render(request, 'dashboard.html', context)
     else:
         ip_address = get_client_ip(request)
         context['unlogged_tasks'] = UnloggedUserTask.objects.filter(ip_address=ip_address)
-
-    return render(request, 'dashboard.html', context)
+        return render(request, 'dashboard.html', context)
 
 
 
@@ -367,3 +368,18 @@ def export_project_files(request, project_id):
     os.remove(zip_path)
 
     return response
+
+
+
+def view_project_tasks(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+
+    # Ensure the user is the Product Owner of the project
+
+    # Fetch all tasks related to this project
+    tasks = project.tasks.all()
+
+    return render(request, 'project_tasks.html', {
+        'project': project,
+        'tasks': tasks,
+    })
