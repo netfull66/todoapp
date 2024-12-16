@@ -53,16 +53,16 @@
       </div>
       <div class="tasks-wrapper">
         {% if tasks %}
-        <ul class="tasks">
+        <ul>
           {% for task in tasks %}
           <li class="task-item {% if task.is_done %}completed{% endif %}">
-            <h4>{{ task.task_name }}</h4>
+
+            <li>{{ task.task_name }}</li>
             <p><strong>Assigned To:</strong> {{ task.assigned_to.username }}
-              <button onclick="document.getElementById('reassign-task-{{ task.id }}').style.display='block'">Reassign</button>
+              <button class="create-task-btn" onclick="document.getElementById('reassign-task-{{ task.id }}').style.display='block'">Reassign</button>
             </p>
-            <p><strong>Due Date:</strong> {{ task.due_date }}</p>
             <p><strong>Status:</strong> {% if task.is_done %}Completed{% else %}Pending{% endif %}</p>
-            <!-- Reassign Task Form -->
+            
             <div id="reassign-task-{{ task.id }}" class="reassign-form" style="display:none;">
               <form method="post" action="{% url 'reassign_task' task.id %}">
                 {% csrf_token %}
@@ -100,9 +100,9 @@
           </li>
           {% endfor %}
         </ul>
-        {% else %}
-        <p>No tasks assigned to this project yet.</p>
-        {% endif %}
+      {% else %}
+        <p>No tasks available.</p>
+      {% endif %}
       </div>
       
     </div>
@@ -119,6 +119,7 @@
     border-radius: 5px;
     font-size: 14px;
   }
+
   .create-task-btn:hover {
     background-color: #0056b3;
   }
@@ -133,6 +134,7 @@
     border-radius: 5px;
     font-size: 14px;
   }
+
   .pro-subscription-btn:hover {
     background-color: #218838;
   }
@@ -195,8 +197,27 @@
     background-color: #0056b3;
   }
 
+  /* Style for select element */
+  select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    font-size: 14px;
+    color: #555;
+    outline: none;
+  }
 
+  select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
 
+  select option {
+    background-color: #fff;
+    color: #555;
+  }
 </style>
 
 <script>

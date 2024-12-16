@@ -54,16 +54,16 @@ def create_task(request):
                 project = get_object_or_404(Project, id=project_id) if project_id else None
                 file = request.FILES.get('file')
                 task = ProUserTask.objects.create(user=request.user, task_name=task_name, project=project)
-                return redirect('dashboard_view')
+                return redirect('dashboard')
             else:
                 # Logged user task creation
                 task = LoggedUserTask.objects.create(user=request.user, task_name=task_name)
-                return redirect('dashboard_view')
+                return redirect('dashboard')
         else:
             # For unlogged user task creation
             ip_address = get_client_ip(request)
             task = UnloggedUserTask.objects.create(ip_address=ip_address, task_name=task_name)
-            return redirect('dashboard_view')
+            return redirect('dashboard')
 
     # For GET request, provide the project list for pro users
     if request.user.is_authenticated and request.user.subscription_type == 'pro':
@@ -136,13 +136,22 @@ def dashboard_view(request):
 
     if user.is_authenticated:
         if user.subscription_type == 'pro':
+            # Fetch Pro user tasks and their projects
             context['pro_tasks'] = ProUserTask.objects.filter(user=user)
             context['projects'] = Project.objects.filter(created_by=user)
             return render(request, 'pro_programming_tasks.html', context)
         else:
-            context['logged_tasks'] = LoggedUserTask.objects.filter(user=user)
+            # Fetch tasks directly created by the free user
+            user_tasks = list(LoggedUserTask.objects.filter(user=user))
+
+            # Fetch tasks assigned to the free user by Pro users
+            assigned_tasks = list(ProUserTask.objects.filter(assigned_to=user))
+
+            # Combine the tasks into a single list
+            context['logged_tasks'] = user_tasks + assigned_tasks
             return render(request, 'dashboard.html', context)
     else:
+        # Handle unlogged users
         ip_address = get_client_ip(request)
         context['unlogged_tasks'] = UnloggedUserTask.objects.filter(ip_address=ip_address)
         return render(request, 'dashboard.html', context)
