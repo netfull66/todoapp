@@ -1,321 +1,235 @@
 <!DOCTYPE html>
-{% load static %}
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Task Management Dashboard UI</title>
-  <link rel="stylesheet" href="{% static 'style.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header.header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo img {
+            max-height: 100px; /* Adjusted height for smaller logo */
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .nav-list {
+            list-style: none;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .dashboard {
+            padding: 2rem 0;
+        }
+
+        .task-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-section h2 {
+            margin-bottom: 1rem;
+            color: #4CAF50;
+        }
+
+        .task-list, .project-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .task-item, .project-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+
+        .task-item h3, .project-item h4 {
+            margin: 0 0 0.5rem 0;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-complete {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+        }
+    </style>
+    <script>
+        function handleTaskToggle(checkbox) {
+            const taskId = checkbox.dataset.taskId;
+            const isDone = checkbox.checked;
+
+            fetch(`/update_task_status/${taskId}/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: JSON.stringify({ is_done: isDone }),
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Failed to update task status.");
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log("Task status updated:", data);
+            })
+            .catch((error) => {
+                console.error("Error updating task status:", error);
+                checkbox.checked = !isDone; // Revert checkbox on error
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
 </head>
 <body>
-<!-- partial:index.partial.html -->
-<link href="https://fonts.googleapis.com/css?family=DM+Sans:400,500,700&display=swap" rel="stylesheet">
-<div class="task-manager">
-  <div class="left-bar">
-    <div class="upper-part">
-      <div class="actions">
-        <div class="circle"></div>
-        <div class="circle-2"></div>
-      </div>
-    </div>
-    <div class="left-content">
+    <header class="header">
+        <div class="container">
+            <h1 class="logo"><img src="../static/netfull.png" alt="Logo"></h1>
+            <nav class="nav-bar">
+                <ul class="nav-list">
+                    <li><a href="/dashboard" class="nav-link">Home</a></li>
+                    <li><a href="#" class="nav-link">Features</a></li>
+                    <li><a href="#" class="nav-link">Contact</a></li>
+                    {% if user.is_authenticated %}
+                    <li><a href="#" class="nav-link">Logout</a></li>
+                    {% else %}
+                    <li><a href="/login" class="nav-link">Login</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-    </div>
-  </div>
-  
-  <div class="page-content">
-    <div class="header">
-      Today Tasks
-      <a href="/subscribe/pro/" class="pro-subscription-btn">Go Pro</a> <!-- Pro Subscription Button -->
-    </div>
-    <a href="/create-task/" class="create-task-btn">+ Create Task</a>
-    
-    <!-- Tasks Section -->
-    <div class="tasks-wrapper" id="tasks-wrapper">
-      {% if user.is_authenticated %}
-        {% if user.subscription_type == 'pro' %}
-          <h3>Pro User Tasks</h3>
-          {% for task in pro_tasks %}
-            <div class="task">
-              <input 
-                class="task-item" 
-                name="task" 
-                type="checkbox" 
-                id="item-{{ task.id }}" 
-                {% if task.is_done %}checked{% endif %}
-                data-task-id="{{ task.id }}"
-                onchange="handleTaskToggle(this)"
-              >
-              <label for="item-{{ task.id }}">
-                <span class="label-text">{{ task.task_name }}</span>
-              </label>
-              <!-- File upload section for Pro users -->
-              <div class="file-upload" id="file-upload-{{ task.id }}" style="display: none;">
-                <form id="upload-form-{{ task.id }}" method="POST" enctype="multipart/form-data">
-                  {% csrf_token %}
-                  <input type="file" name="file" required>
-                  <button type="button" onclick="submitUpload({{ task.id }})">Upload</button>
-                </form>
-              </div>
-              {% if task.feedback %}
-                <div class="task-feedback">
-                  <strong>Feedback:</strong> {{ task.feedback }}
-                </div>
-              {% endif %}
-            </div>
-          {% empty %}
-            <p>No tasks available.</p>
-          {% endfor %}
+    <main class="dashboard">
+        {% if user.is_authenticated and user.subscription_type == 'pro' %}
+        <!-- Pro User View -->
+        <section class="task-section pro" id="pro-view">
+            <h2>Your Projects</h2>
+            <ul class="project-list">
+                {% for project in projects %}
+                <li class="project-item">
+                    <h4>{{ project.name }}</h4>
+                    <p>{{ project.description }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+
+            <h2>Your Tasks</h2>
+            <ul class="task-list">
+                {% for task in pro_tasks %}
+                <li class="task-item">
+                    <input type="checkbox" data-task-id="{{ task.id }}" {% if task.is_done %}checked{% endif %} onchange="handleTaskToggle(this)">
+                    <h3>{{ task.task_name }}</h3>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% elif user.is_authenticated %}
+        <!-- Logged User View -->
+        <section class="task-section logged" id="logged-view">
+            <h2>Your Tasks</h2>
+            <ul class="task-list">
+                {% for task in logged_tasks %}
+                <li class="task-item">
+                    <input type="checkbox" data-task-id="{{ task.id }}" {% if task.is_done %}checked{% endif %} onchange="handleTaskToggle(this)">
+                    <h3>{{ task.task_name }}</h3>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
         {% else %}
-        {% for task in logged_tasks %}
-          <div class="task">
-            <input
-              class="task-item"
-              name="task"
-              type="checkbox"
-              id="item-{{ task.id }}"
-              {% if task.is_done %}checked{% endif %}
-              data-task-id="{{ task.id }}"
-              onchange="handleTaskToggle(this)"
-            >
-            <label for="item-{{ task.id }}">
-              <span class="label-text">{{ task.task_name }}</span>
-            </label>
-            {% if task.project %}
-              <div class="task-project">
-                <strong>Project:</strong> {{ task.project.name }}
-              </div>
-            {% endif %}
-            {% if task.uploaded_file %}
-              <div class="task-file">
-                <a href="{{ task.uploaded_file.url }}" target="_blank">View File</a>
-              </div>
-            {% endif %}
-          </div>
-        {% empty %}
-          <p>No tasks available.</p>
-        {% endfor %}
-                {% endif %}
-      {% else %}
-        <h3>Unlogged User Tasks</h3>
-        {% for task in unlogged_tasks %}
-          <div class="task">
-            <input 
-              class="task-item" 
-              name="task" 
-              type="checkbox" 
-              id="item-{{ task.id }}" 
-              {% if task.is_done %}checked{% endif %}
-              data-task-id="{{ task.id }}"
-              onchange="handleTaskToggle(this)"
-            >
-            <label for="item-{{ task.id }}">
-              <span class="label-text">{{ task.task_name }}</span>
-            </label>
-          </div>
-        {% empty %}
-          <p>No tasks available.</p>
-        {% endfor %}
-      {% endif %}
-    </div>
-  </div>
-</div>
+        <!-- Unlogged User View -->
+        <section class="task-section unlogged" id="unlogged-view">
+            <h2>Your Tasks</h2>
+            <ul class="task-list">
+                {% for task in unlogged_tasks %}
+                <li class="task-item">
+                    <input type="checkbox" data-task-id="{{ task.id }}" {% if task.is_done %}checked{% endif %} onchange="handleTaskToggle(this)">
+                    <h3>{{ task.task_name }}</h3>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
+    </main>
 
-<style>
-  .create-task-btn {
-    float: right;
-    background-color: #007bff;
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-size: 14px;
-  }
-  .create-task-btn:hover {
-    background-color: #0056b3;
-  }
-
-  .pro-subscription-btn {
-    float: right;
-    margin-right: 15px;
-    background-color: #28a745;
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-size: 14px;
-  }
-  .pro-subscription-btn:hover {
-    background-color: #218838;
-  }
-
-  .header {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-</style>
-
-<script>
-  function handleTaskToggle(checkbox) {
-    const taskId = checkbox.dataset.taskId;
-    const isDone = checkbox.checked;
-
-    // Update task status
-    fetch(`/update_task_status/${taskId}/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-      body: JSON.stringify({ is_done: isDone }),  // Send status change in request body
-    })
-    .then((response) => {
-      if (response.ok) {
-        return response.json();
-      } else {
-        throw new Error("Failed to update task status.");
-      }
-    })
-    .then((data) => {
-      console.log("Task status updated:", data);
-      // Optionally: Show or hide the file upload section for Pro users
-      const fileUploadSection = document.getElementById(`file-upload-${taskId}`);
-      if (isDone) {
-        fileUploadSection.style.display = "block"; // Show file upload if task is done
-      } else {
-        fileUploadSection.style.display = "none"; // Hide file upload if task is not done
-      }
-    })
-    .catch((error) => {
-      console.error("Error updating task status:", error);
-      checkbox.checked = !isDone;  // Revert checkbox on error
-    });
-  }
-
-  // Helper function to retrieve CSRF token from cookies
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith(name + "=")) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
-
-
-  // Helper function to retrieve CSRF token from cookies
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith(name + "=")) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
-</script>
-
-<script>
-
-function handleTaskToggle(checkbox) {
-    const taskId = checkbox.dataset.taskId;
-    const projectId = checkbox.dataset.projectId; // Optional for project tasks
-    const isDone = checkbox.checked;
-
-    const payload = { is_done: isDone };
-    if (projectId) {
-        payload.project_id = projectId; // Include project ID if present
-    }
-
-    fetch(`/update_task_status/${taskId}/`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify(payload),
-    })
-        .then((response) => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error("Failed to update task status.");
-            }
-        })
-        .then((data) => {
-            console.log("Task status updated:", data);
-            const fileUploadSection = document.getElementById(`file-upload-${taskId}`);
-            if (isDone) {
-                fileUploadSection.style.display = "block";
-            } else {
-                fileUploadSection.style.display = "none";
-            }
-        })
-        .catch((error) => {
-            console.error("Error updating task status:", error);
-            checkbox.checked = !isDone;
-        });
-}
-
-
-  function submitUpload(taskId) {
-    const form = document.getElementById(`upload-form-${taskId}`);
-    const formData = new FormData(form);
-
-    fetch(`/upload_task_file/${taskId}/`, {
-      method: "POST",
-      body: formData,
-      headers: {
-        "X-CSRFToken": getCookie("csrftoken"),
-      },
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
-        } else {
-          throw new Error("Failed to upload file.");
-        }
-      })
-      .then((data) => {
-        console.log("File uploaded successfully:", data);
-        alert("File uploaded successfully!");
-      })
-      .catch((error) => {
-        console.error("Error uploading file:", error);
-      });
-  }
-
-  // Helper function to retrieve CSRF token from cookies
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.startsWith(name + "=")) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
-</script>
-
-
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 TodoPro. All Rights Reserved.</p>
+        </div>
+    </footer>
 </body>
 </html>

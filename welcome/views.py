@@ -139,7 +139,7 @@ def dashboard_view(request):
             # Fetch Pro user tasks and their projects
             context['pro_tasks'] = ProUserTask.objects.filter(user=user)
             context['projects'] = Project.objects.filter(created_by=user)
-            return render(request, 'pro_programming_tasks.html', context)
+            return render(request, 'index.html', context)
         else:
             # Fetch tasks directly created by the free user
             user_tasks = list(LoggedUserTask.objects.filter(user=user))
@@ -149,13 +149,64 @@ def dashboard_view(request):
 
             # Combine the tasks into a single list
             context['logged_tasks'] = user_tasks + assigned_tasks
-            return render(request, 'dashboard.html', context)
+            return render(request, 'index.html', context)
     else:
         # Handle unlogged users
         ip_address = get_client_ip(request)
         context['unlogged_tasks'] = UnloggedUserTask.objects.filter(ip_address=ip_address)
-        return render(request, 'dashboard.html', context)
+        return render(request, 'index.html', context)
 
+@login_required
+def user_projects_view(request):
+    """
+    Fetch projects related to the authenticated user and render the 'tab-panel.html' template.
+    """
+    user = request.user
+
+    # Fetch projects created by the user and projects where the user is a member
+    created_projects = Project.objects.filter(created_by=user)
+    member_projects = Project.objects.filter(members=user)
+
+    # Combine QuerySets into a Python list and remove duplicates
+    user_projects = list(created_projects) + list(member_projects)
+    unique_projects = {project.id: project for project in user_projects}.values()  # Deduplicate by project ID
+
+    # Context data for the template
+    context = {
+        'projects': unique_projects
+    }
+
+    return render(request, 'projects.html', context)
+
+def user_tasks_view(request):
+    """
+    Fetch tasks for a user based on their authentication and subscription status
+    and render the 'tasks.html' template.
+    """
+    user = request.user
+    context = {}
+
+    if user.is_authenticated:
+        if user.subscription_type == 'pro':
+            # Fetch Pro user tasks
+            pro_tasks = ProUserTask.objects.filter(user=user)
+            context['tasks'] = pro_tasks
+        else:
+            # Fetch tasks directly created by the free user
+            user_tasks = LoggedUserTask.objects.filter(user=user)
+
+            # Fetch tasks assigned to the free user by Pro users
+            assigned_tasks = ProUserTask.objects.filter(assigned_to=user)
+
+            # Combine the tasks into a single list
+            context['tasks'] = list(user_tasks) + list(assigned_tasks)
+    else:
+        # Handle unlogged users
+        ip_address = get_client_ip(request)  # Fetch the IP address of the user
+        unlogged_tasks = UnloggedUserTask.objects.filter(ip_address=ip_address)
+        context['tasks'] = unlogged_tasks
+
+    return render(request, 'tasks.html', context)
 
 
 def update_task_status(request, task_id):

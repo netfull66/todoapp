@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Management Dashboard UI</title>
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<link href="https://fonts.googleapis.com/css?family=DM+Sans:400,500,700&display=swap" rel="stylesheet">
+<div class="task-manager">
+  <div class="left-bar">
+    <div class="upper-part">
+      <div class="actions">
+        <div class="circle"></div>
+        <div class="circle-2"></div>
+      </div>
+    </div>
+    <div class="left-content">
+
+    </div>
+  </div>
+  
+  <div class="page-content">
+    <div class="header">
+      {{project.name}} Project Detail
+      <p class="pro-subscription-btn">Your Are Pro !</p>
+    </div>
+
+    <!-- Projects Section -->
+    <div class="projects-section">
+      <div class="section-header">
+        <h3>Project Members</h3>
+        <button class="create-task-btn" onclick="window.location.href='{% url 'invite_team_members' project.id %}'">Add Member</button>
+      </div>
+      {% if members %}
+        <li class="members">
+          {% for member in members %}
+          <li>{{ member.username }} ({{ member.email }}) - {{ member.role }}</li>
+          {% endfor %}
+        </li>
+      {% else %}
+        <p>No members added yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Tasks Section -->
+    <div class="tasks-section">
+      <div class="section-header">
+        <h2>Today’s Tasks</h2>
+        <a href="/create-task" class="create-task-btn">+ Create Task</a>
+      </div>
+      <div class="tasks-wrapper">
+        {% if tasks %}
+        <ul>
+          {% for task in tasks %}
+          <li class="task-item {% if task.is_done %}completed{% endif %}">
+
+            <li>{{ task.task_name }}</li>
+            <p><strong>Assigned To:</strong> {{ task.assigned_to.username }}
+              <button class="create-task-btn" onclick="document.getElementById('reassign-task-{{ task.id }}').style.display='block'">Reassign</button>
+            </p>
+            <p><strong>Status:</strong> {% if task.is_done %}Completed{% else %}Pending{% endif %}</p>
+            
+            <div id="reassign-task-{{ task.id }}" class="reassign-form" style="display:none;">
+              <form method="post" action="{% url 'reassign_task' task.id %}">
+                {% csrf_token %}
+                <label for="assigned_to">Reassign To:</label>
+                <select id="assigned_to" name="assigned_to" required>
+                  {% for member in members %}
+                  <option value="{{ member.id }}" {% if member == task.assigned_to %}selected{% endif %}>{{ member.username }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit">Reassign</button>
+                <button type="button" onclick="document.getElementById('reassign-task-{{ task.id }}').style.display='none'">Cancel</button>
+              </form>
+            </div>
+            {% if task.uploaded_file %}
+            <p><strong>Uploaded File:</strong> {{ task.uploaded_file.name }}</p>
+            <a href="{% url 'download_task_file' task.id %}" target="_blank">Download File</a>
+            {% endif %}
+            {% if task.is_done %}
+            <!-- Task Feedback Section -->
+            <div class="task-feedback">
+              <h5>Provide Feedback</h5>
+              <form method="post" action="{% url 'task_detail' task.id %}">
+                {% csrf_token %}
+                <label for="feedback">Feedback:</label>
+                <textarea id="feedback" name="feedback" required></textarea>
+                <label for="approval">Approve/Refuse:</label>
+                <select id="approval" name="action" required>
+                  <option value="approve">Approve</option>
+                  <option value="refuse">Refuse</option>
+                </select>
+                <button type="submit">Submit Feedback</button>
+              </form>
+            </div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No tasks available.</p>
+      {% endif %}
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<style>
+  .create-task-btn {
+    float: right;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+
+  .create-task-btn:hover {
+    background-color: #0056b3;
+  }
+
+  .pro-subscription-btn {
+    float: right;
+    margin-right: 15px;
+    background-color: #28a745;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+
+  .pro-subscription-btn:hover {
+    background-color: #218838;
+  }
+
+  .header {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .projects-section {
+    margin-bottom: 40px;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .projects-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .project {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .project h3 {
+    margin-top: 0;
+  }
+
+  .project-meta {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #555;
+  }
+
+  .view-details-btn {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+  }
+
+  .view-details-btn:hover {
+    background-color: #0056b3;
+  }
+
+  /* Style for select element */
+  select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    font-size: 14px;
+    color: #555;
+    outline: none;
+  }
+
+  select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+
+  select option {
+    background-color: #fff;
+    color: #555;
+  }
+</style>
+
+<script>
+  function handleTaskToggle(checkbox) {
+    const taskId = checkbox.dataset.taskId;
+    const isDone = checkbox.checked;
+
+    // Update task status
+    fetch(`/update_task_status/${taskId}/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify({ is_done: isDone }),
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Failed to update task status.");
+        }
+      })
+      .then((data) => {
+        console.log("Task status updated:", data);
+        // Show or hide the file upload section
+        const fileUploadSection = document.getElementById(`file-upload-${taskId}`);
+        if (isDone) {
+          fileUploadSection.style.display = "block"; // Show file upload
+        } else {
+          fileUploadSection.style.display = "none"; // Hide file upload
+        }
+      })
+      .catch((error) => {
+        console.error("Error updating task status:", error);
+        checkbox.checked = !isDone; // Revert checkbox on error
+      });
+  }
+
+  function submitUpload(taskId) {
+    const form = document.getElementById(`upload-form-${taskId}`);
+    const formData = new FormData(form);
+
+    fetch(`/upload_task_file/${taskId}/`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Failed to upload file.");
+        }
+      })
+      .then((data) => {
+        console.log("File uploaded successfully:", data);
+        alert("File uploaded successfully!");
+      })
+      .catch((error) => {
+        console.error("Error uploading file:", error);
+      });
+  }
+
+  // Helper function to retrieve CSRF token from cookies
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+
+</body>
+</html>

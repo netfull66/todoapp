@@ -28,7 +28,9 @@ urlpatterns = [
     path('upload_task_file/<int:task_id>/', views.upload_task_file, name='upload_task_file'),
     path('download-task-file/<int:task_id>/', views.download_file, name='download_task_file'),
     path('export_project_files/<int:project_id>/', views.export_project_files, name='export_project_files'),
+    path('tasks/', views.user_tasks_view, name='user_tasks_view'),
 
+    path('projects/', views.user_projects_view, name='user_projects_view'),
     path('project/<int:project_id>/tasks/', views.view_project_tasks, name='view_project_tasks'),
     path('project/<int:project_id>/', views.project_detail, name='project_detail'),
     path('task/<int:task_id>/', views.task_detail, name='task_detail'),
