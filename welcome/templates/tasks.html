@@ -46,7 +46,7 @@
   <div style="color: white;
 padding: 15px 50px 5px 50px;
 float: right;
-font-size: 16px;"> Last access : 30 May 2014 &nbsp; <a href="#" class="btn btn-danger square-btn-adjust">Logout</a> </div>
+font-size: 16px;"><a href="#" class="btn btn-danger square-btn-adjust">Logout</a> </div>
         </nav>   
            <!-- /. NAV TOP  -->
                 <nav class="navbar-default navbar-side" role="navigation">
@@ -139,12 +139,13 @@ font-size: 16px;"> Last access : 30 May 2014 &nbsp; <a href="#" class="btn btn-d
                                         <tr>
                                             <th>Task Name</th>
                                             <th>Status</th>
+                                            <th>Upload File</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for task in tasks %}
                                         <tr class="odd gradeX">
-                                            <td>{{task.task_name}}</td>
+                                            <td>{{ task.task_name }}</td>
                                             <td>
                                                 <input 
                                                     type="checkbox" 
@@ -152,9 +153,27 @@ font-size: 16px;"> Last access : 30 May 2014 &nbsp; <a href="#" class="btn btn-d
                                                     onchange="handleTaskToggle(this)" 
                                                     {% if task.is_done %}checked{% endif %} 
                                                 />
-                                            </td>                                        </tr>
+                                            </td>
+                                            <td>
+                                                {% if is_pro_user or task.assigned_to == user %}
+                                                    {% if task.uploaded_file %}
+                                                        <a href="{{ task.uploaded_file.url }}" target="_blank">{{ task.uploaded_file.name }}</a>
+                                                    {% else %}
+                                                        <form action="{% url 'upload_task_file' task.id %}" method="post" enctype="multipart/form-data">
+                                                            {% csrf_token %}
+                                                            <input type="file" name="uploaded_file" required />
+                                                            <button type="submit" class="btn btn-sm btn-primary">Upload</button>
+                                                        </form>
+                                                    {% endif %}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            
+                                        </tr>
                                         {% endfor %}
                                     </tbody>
+                                    
                                 </table>
                             </div>
                             

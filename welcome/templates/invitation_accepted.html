@@ -1,62 +1,323 @@
+{% load static %}
+
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitation Accepted</title>
-    <link rel="stylesheet" href="../static/style.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Detail - Admin Dashboard</title>
+    <!-- BOOTSTRAP STYLES -->
+    <link href="{% static 'bootstrap.css' %}" rel="stylesheet" />
+    <!-- FONTAWESOME STYLES -->
+    <link href="{% static 'font-awesome.css' %}" rel="stylesheet" />
+    <!-- CUSTOM STYLES -->
+    <link href="{% static 'custom.css' %}" rel="stylesheet" />
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css" />
+    <style>
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+}
+
+.task-feedback h5 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.task-feedback form {
+    display: flex;
+    flex-direction: column;
+}
+
+.task-feedback label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.task-feedback textarea {
+    resize: none;
+    height: 80px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 15px;
+    outline: none;
+}
+
+.task-feedback textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.task-feedback select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 15px;
+    outline: none;
+}
+
+.task-feedback select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.task-feedback button {
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.task-feedback button:hover {
+    background-color: #218838;
+}
+
+.task-feedback button[type="button"] {
+    background-color: #dc3545;
+}
+
+.task-feedback button[type="button"]:hover {
+    background-color: #c82333;
+}
+.back-link {
+      display: block;
+      margin-top: 15px;
+      text-align: center;
+      color: #007bff;
+      font-size: 14px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Invitation Accepted</h1>
-    </header>
-    <section>
-        <p>Congratulations! You have successfully joined the project: <strong>{{ project.name }}</strong>.</p>
-        <p><strong>Created by:</strong> {{ project.created_by.username }}</p>
-        <p>Start collaborating with your team right away!</p>
-        <button onclick="window.location.href='{% url 'project_detail' project.id %}'">Go to Project</button>
-    </section>
-    <footer>
-        <p>© 2024 Task Management App. All rights reserved.</p>
-    </footer>
+    <div id="wrapper">
+        <!-- Navigation Bar -->
+        <nav class="navbar navbar-default navbar-cls-top" role="navigation" style="margin-bottom: 0">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".sidebar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="index.html">Binary admin</a>
+            </div>
+            <div style="color: white; padding: 15px 50px 5px 50px; float: right; font-size: 16px;">
+                <a href="#" class="btn btn-danger square-btn-adjust">Logout</a>
+            </div>
+        </nav>
+        
+        <!-- Sidebar Navigation -->
+        <nav class="navbar-default navbar-side" role="navigation">
+            <div class="sidebar-collapse">
+                <ul class="nav" id="main-menu">
+                    <li class="text-center">
+                        <img src="{% static 'img/find_user.png' %}" class="user-image img-responsive" />
+                    </li>
+                    <li>
+<a href="{% url 'dashboard' %}"><i class="fa fa-dashboard fa-3x"></i> Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="ui.html"><i class="fa fa-desktop fa-3x"></i> UI Elements</a>
+                    </li>
+                    <li>
+                        <a href="tab-panel.html"><i class="fa fa-qrcode fa-3x"></i> Tabs & Panels</a>
+                    </li>
+                    <li>
+                        <a href="chart.html"><i class="fa fa-bar-chart-o fa-3x"></i> Morris Charts</a>
+                    </li>
+                    <li>
+                        <a href="table.html"><i class="fa fa-table fa-3x"></i> Table Examples</a>
+                    </li>
+                    <li>
+                        <a href="form.html"><i class="fa fa-edit fa-3x"></i> Forms</a>
+                    </li>
+                    <li>
+                        <a href="#"><i class="fa fa-sitemap fa-3x"></i> Multi-Level Dropdown<span class="fa arrow"></span></a>
+                        <ul class="nav nav-second-level">
+                            <li>
+                                <a href="#">Second Level Link</a>
+                            </li>
+                            <li>
+                                <a href="#">Second Level Link</a>
+                            </li>
+                            <li>
+                                <a href="#">Second Level Link<span class="fa arrow"></span></a>
+                                <ul class="nav nav-third-level">
+                                    <li>
+                                        <a href="#">Third Level Link</a>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="active-menu" href="blank.html"><i class="fa fa-square-o fa-3x"></i> Blank Page</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
+        <!-- Page Content -->
+        <div id="page-wrapper">
+            <div id="page-inner">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2 class="page-title">Invitation Accepted</h2>
+                            <h5 class="welcome-message">Welcome {{ user.username }}, Love to see you back.</h5>
+                        </div>
+                    </div>
+                    <hr />
+
+                    <!-- Task Manager Section -->
+                    <div class="task-manager row">
+                        <div class="col-md-6">
+                            <div class="task-left">
+                                <p>Congratulations! You have successfully joined the project: <strong>{{ project.name }}</strong>.</p>
+                                <p><strong>Created by:</strong> {{ project.created_by.username }}</p>
+                                <p>Start collaborating with your team right away!</p>                      
+                                <a href="/project/{{project.id}}" class="back-link">Back to Dashboard</a>
+                        </div>
+
+                        <!-- Sidebar for Additional Content -->
+                        <div class="col-md-6">
+                            <div class="task-right">
+                                <div class="actions">
+                                    <div class="circle"></div>
+                                    <div class="circle-2"></div>
+                                </div>
+                                <!-- Add more content for the right side here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="{% static 'js/jquery-1.10.2.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    
+    <script src="{% static 'js/jquery.metisMenu.js' %}"></script>
+    <script src="{% static 'js/custom.js' %}"></script>
+    <script>
+        function handleTaskToggle(checkbox) {
+          const taskId = checkbox.dataset.taskId;
+          const isDone = checkbox.checked;
+      
+          // Update task status
+          fetch(`/update_task_status/${taskId}/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: JSON.stringify({ is_done: isDone }),
+          })
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              } else {
+                throw new Error("Failed to update task status.");
+              }
+            })
+            .then((data) => {
+              console.log("Task status updated:", data);
+              // Show or hide the file upload section
+              const fileUploadSection = document.getElementById(`file-upload-${taskId}`);
+              if (isDone) {
+                fileUploadSection.style.display = "block"; // Show file upload
+              } else {
+                fileUploadSection.style.display = "none"; // Hide file upload
+              }
+            })
+            .catch((error) => {
+              console.error("Error updating task status:", error);
+              checkbox.checked = !isDone; // Revert checkbox on error
+            });
         }
-        header {
-            background-color: #28a745;
-            color: white;
-            padding: 20px;
-            text-align: center;
+      
+        function submitUpload(taskId) {
+          const form = document.getElementById(`upload-form-${taskId}`);
+          const formData = new FormData(form);
+      
+          fetch(`/upload_task_file/${taskId}/`, {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+            },
+          })
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              } else {
+                throw new Error("Failed to upload file.");
+              }
+            })
+            .then((data) => {
+              console.log("File uploaded successfully:", data);
+              alert("File uploaded successfully!");
+            })
+            .catch((error) => {
+              console.error("Error uploading file:", error);
+            });
         }
-        section {
-            padding: 20px;
-            text-align: center;
+      
+        // Helper function to retrieve CSRF token from cookies
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+              }
+            }
+          }
+          return cookieValue;
         }
-        footer {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-        }
-        button {
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+      </script>
 </body>
 </html>

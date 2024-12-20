@@ -200,13 +200,18 @@ def user_tasks_view(request):
 
             # Combine the tasks into a single list
             context['tasks'] = list(user_tasks) + list(assigned_tasks)
+
+        # Add user subscription type to context
+        context['is_pro_user'] = user.subscription_type == 'pro'
     else:
         # Handle unlogged users
         ip_address = get_client_ip(request)  # Fetch the IP address of the user
         unlogged_tasks = UnloggedUserTask.objects.filter(ip_address=ip_address)
         context['tasks'] = unlogged_tasks
+        context['is_pro_user'] = False  # Not a logged-in user
 
     return render(request, 'tasks.html', context)
+
 
 
 def update_task_status(request, task_id):
