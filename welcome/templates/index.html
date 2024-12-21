@@ -231,15 +231,12 @@ font-size: 16px;">{% if user.is_authenticated %}<a href="/logout" class="btn btn
                 </div>
                  <!-- /. ROW  -->
                 <div class="row">
-                    <div class="col-md-6 col-sm-12 col-xs-12">
-                </div>
-                         
                          <div class="panel panel-default">
                         <div class="panel-heading">
                             Donut Chart Example
                         </div>
                         <div class="panel-body">
-                            <div id="morris-donut-chart"></div>
+                            <div id="morris-donut-chart" style="height: 300px;"></div>
                         </div>
                     </div>
                       
@@ -352,7 +349,29 @@ font-size: 16px;">{% if user.is_authenticated %}<a href="/logout" class="btn btn
     <script src="../static/js/morris/morris.js"></script>
       <!-- CUSTOM SCRIPTS -->
     <script src="../static/js/custom.js"></script>
+<script>
+    // Get task data from context
+    var totalTasks = {{ task_count }};
+    var completedTasks = {{ completed_task_count }};
+    var remainingTasks = totalTasks - completedTasks;
     
+    // Clear any previous chart content before rendering the new one
+    $('#morris-donut-chart').html('');
+
+    // Create the donut chart with the data
+    new Morris.Donut({
+      element: 'morris-donut-chart',
+      data: [
+        { label: 'Completed Tasks', value: completedTasks },
+        { label: 'Remaining Tasks', value: remainingTasks }
+      ],
+      colors: ['#4caf50', '#f44336'],  // Green for completed, Red for remaining
+      resize: true
+    });
+</script>
+
+    
+        
    
 </body>
 </html>

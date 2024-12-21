@@ -19,7 +19,8 @@ class CustomUser(AbstractUser):
         choices=[('programming', 'Programming'), ('education', 'Education'), ('crm', 'CRM')],
         null=True
     )
-    # Add related_name to avoid conflicts
+    pro_subscription_date = models.DateField(null=True, blank=True)  # Track last subscription to Pro
+    subscription_end_date = models.DateField(null=True, blank=True)  # New field
     groups = models.ManyToManyField(
         Group,
         related_name="custom_user_groups",
@@ -107,3 +108,16 @@ class Invitation(models.Model):
 
     def __str__(self):
         return f"Invitation to {self.email} for {self.project}"
+
+
+class SubscriptionOrder(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[('Pending', 'Pending'), ('Completed', 'Completed'), ('Failed', 'Failed')],
+        default='Pending'
+    )
+    payment_key = models.CharField(max_length=255, blank=True, null=True)
+    payment_url = models.URLField(blank=True, null=True)
+    amount_cents = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
