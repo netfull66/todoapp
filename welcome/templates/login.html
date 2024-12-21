@@ -5,102 +5,119 @@
   <title>Login</title>
   <link rel="stylesheet" href="../static/style.css">
   <style>
+    /* Included from the provided CSS */
+    @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,600');
+
+    body {
+      font-family: 'Open Sans', sans-serif;
+      background: #202020;
+      color: #f3f3f3;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
     .form-container {
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  background-color: var(--bg-color);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
+      width: 100%;
+      max-width: 600px; /* Wider container */
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 40px; /* Increased padding for better spacing */
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: center; /* Center-align content */
+    }
 
-.form-group {
-  margin-bottom: 20px;
-}
+    .form-container h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #C90000; /* Match the theme color */
+    }
 
-.form-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: var(--main-text-color);
-}
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left; /* Align labels and inputs to the left */
+    }
 
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #f7f8fc;
-}
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #202020;
+    }
 
-.form-group input:focus {
-  border-color: var(--checkbox-color);
-  outline: none;
-}
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f7f8fc;
+    }
 
-.form-footer {
-  text-align: center;
-  margin-top: 10px;
-  font-size: 14px;
-}
+    .form-group input:focus {
+      border-color: #C90000;
+      outline: none;
+    }
 
-.form-footer a {
-  color: var(--checkbox-color);
-  text-decoration: none;
-  font-weight: 500;
-}
+    .wide-blue-btn {
+      display: block;
+      width: 100%;
+      padding: 15px 20px;
+      background-color: #C90000;
+      color: #fff;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
 
-.form-footer a:hover {
-  text-decoration: underline;
-}
-.wide-blue-btn {
-  display: block; /* Makes the button span the full width of its container */
-  width: 100%; /* Full width */
-  padding: 15px 20px; /* Padding for a balanced appearance */
-  background-color: #007bff; /* Blue color */
-  color: #fff; /* White text */
-  font-size: 16px; /* Slightly larger font size for prominence */
-  font-weight: bold; /* Bold text for emphasis */
-  text-align: center; /* Centers text within the button */
-  text-decoration: none; /* Removes underline for links styled as buttons */
-  border: none; /* Removes border */
-  border-radius: 5px; /* Rounded corners */
-  cursor: pointer; /* Pointer cursor on hover */
-  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth transition for hover effects */
-}
+    .wide-blue-btn:hover {
+      background-color: #A70303;
+      transform: translateY(-2px);
+    }
 
-.wide-blue-btn:hover {
-  background-color: #0056b3; /* Darker blue on hover */
-  transform: translateY(-2px); /* Slight lift effect */
-}
+    .form-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+    }
 
-.wide-blue-btn:active {
-  transform: translateY(0); /* Button returns to original position on click */
-}
+    .form-footer a {
+      color: #C90000;
+      text-decoration: none;
+      font-weight: 600;
+    }
 
+    .form-footer a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-  <div class="task-manager">
-    <div class="page-content">
-      <div class="header">Login</div>
-      <form action="/login/" method="POST" class="form-container">
-        {% csrf_token %}
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input type="text" id="username" name="username" required placeholder="Enter your username">
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" name="password" required placeholder="Enter your password">
-        </div>
-        <button type="submit" class="wide-blue-btn">Login</button>
-      </form>
-      <p class="form-footer">Don't have an account? <a href="/register/">Register here</a>.</p>
-    </div>
+  <div class="form-container">
+    <h2>Login</h2>
+    <form action="/login/" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required placeholder="Enter your username">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="Enter your password">
+      </div>
+      <button type="submit" class="wide-blue-btn">Login</button>
+    </form>
+    <p class="form-footer" > <a href="/register/">Don't have an account? Register here</a>.</p>
   </div>
 </body>
+
 </html>

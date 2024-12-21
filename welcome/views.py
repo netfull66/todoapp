@@ -136,25 +136,27 @@ def dashboard_view(request):
 
     if user.is_authenticated:
         if user.subscription_type == 'pro':
-            # Fetch Pro user tasks and their projects
-            context['pro_tasks'] = ProUserTask.objects.filter(user=user)
-            context['projects'] = Project.objects.filter(created_by=user)
-            return render(request, 'index.html', context)
+            tasks = ProUserTask.objects.filter(user=user).order_by('-created_at')[:5]
         else:
-            # Fetch tasks directly created by the free user
-            user_tasks = list(LoggedUserTask.objects.filter(user=user))
+            user_tasks = list(LoggedUserTask.objects.filter(user=user).order_by('-created_at')[:5])
+            assigned_tasks = list(ProUserTask.objects.filter(assigned_to=user).order_by('-created_at')[:5])
+            tasks = sorted(user_tasks + assigned_tasks, key=lambda t: t.created_at, reverse=True)[:5]
 
-            # Fetch tasks assigned to the free user by Pro users
-            assigned_tasks = list(ProUserTask.objects.filter(assigned_to=user))
+        context['tasks'] = tasks
+        context['task_count'] = len(tasks)  # Add the task count here
+        context['is_pro_user'] = user.subscription_type == 'pro'
+        context['user'] = user
 
-            # Combine the tasks into a single list
-            context['logged_tasks'] = user_tasks + assigned_tasks
-            return render(request, 'index.html', context)
-    else:
-        # Handle unlogged users
-        ip_address = get_client_ip(request)
-        context['unlogged_tasks'] = UnloggedUserTask.objects.filter(ip_address=ip_address)
         return render(request, 'index.html', context)
+
+    else:
+        ip_address = get_client_ip(request)
+        tasks = UnloggedUserTask.objects.filter(ip_address=ip_address).order_by('-created_at')[:5]
+        context['tasks'] = tasks
+        context['task_count'] = len(tasks)  # Add the task count here
+
+        return render(request, 'index.html', context)
+
 
 @login_required
 def user_projects_view(request):
