@@ -98,6 +98,10 @@ class TaskFeedback(models.Model):
 
 # Model for invitations
 class Invitation(models.Model):
+    ROLE_CHOICES = [
+        ('team_member', 'Team Member'),
+        ('product_owner', 'Product Owner'),
+    ]
     team_leader = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_invitations')
     name = models.CharField(max_length=255)
     email = models.EmailField()
@@ -105,9 +109,11 @@ class Invitation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     accepted = models.BooleanField(default=False)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invitations')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='team_member')  # Add this field
 
     def __str__(self):
-        return f"Invitation to {self.email} for {self.project}"
+        return f"Invitation to {self.email} for {self.project} as {self.role}"
+
 
 
 class SubscriptionOrder(models.Model):

@@ -64,7 +64,9 @@ font-size: 16px;">{% if user.is_authenticated %}<a href="/logout" class="btn btn
                     <li>
                         <a href="{% url 'user_projects_view' %}"><i class="fa fa-briefcase fa-3x"></i> Projects</a>
                     </li>
-                    
+                    <li>
+                        <a href="{% url 'subscribe_pro' %}"><i class="fa fa-briefcase fa-3x"></i> Subscripe Pro</a>
+                    </li>            
 					                   
                     
                                
@@ -82,7 +84,7 @@ font-size: 16px;">{% if user.is_authenticated %}<a href="/logout" class="btn btn
                 <div class="row">
                     <div class="col-md-12">
                      <h2>Admin Dashboard</h2>   
-                        <h5>Welcome Jhon Deo , Love to see you back. </h5>
+                        <h5>Welcome {{user.username}} , Love to see you back. </h5>
                     </div>
                 </div>              
                  <!-- /. ROW  -->

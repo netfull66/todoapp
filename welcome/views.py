@@ -22,15 +22,29 @@ from django.http import HttpResponseRedirect
 # Function to handle user registration
 def register_view(request):
     if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('dashboard')
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'register.html', {'form': form})
+        username = request.POST['username']
+        email = request.POST['email']
+        password1 = request.POST['password']
+        password2 = request.POST['confirm_password']
+        
+        if password1 != password2:
+            messages.error(request, "Passwords do not match!")
+            return redirect('register')
+        
+        if CustomUser.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists!")
+            return redirect('register')
+        
+        if CustomUser.objects.filter(email=email).exists():
+            messages.error(request, "Email is already registered!")
+            return redirect('register')
+        
+        user = CustomUser.objects.create_user(username=username, email=email, password=password1)
+        user.save()
 
+    return render(request, 'register.html')
+
+    return render(request, 'register.html', {'form': form})
 # Function to handle user login
 def login_view(request):
     if request.method == 'POST':
@@ -133,7 +147,6 @@ def send_invitation(request):
     projects = Project.objects.filter(created_by=request.user)
     return render(request, 'send_invitation.html', {'projects': projects})
 
-# Function to display the dashboard
 def dashboard_view(request):
     user = request.user
     context = {}
@@ -142,12 +155,17 @@ def dashboard_view(request):
         if user.subscription_type == 'pro':
             tasks = ProUserTask.objects.filter(user=user).order_by('-created_at')
         else:
-            user_tasks = list(LoggedUserTask.objects.filter(user=user).order_by('-created_at'))
-            assigned_tasks = list(ProUserTask.objects.filter(assigned_to=user).order_by('-created_at'))
-            tasks = sorted(user_tasks + assigned_tasks, key=lambda t: t.created_at, reverse=True)
+            user_tasks = LoggedUserTask.objects.filter(user=user).order_by('-created_at')
+            assigned_tasks = ProUserTask.objects.filter(assigned_to=user).order_by('-created_at')
+            # Combine and sort the querysets
+            tasks = sorted(
+                list(user_tasks) + list(assigned_tasks),
+                key=lambda t: t.created_at,
+                reverse=True
+            )
 
-        # Calculate completed tasks count before slicing
-        completed_task_count = tasks.filter(is_done=True).count()
+        # Calculate completed tasks count
+        completed_task_count = sum(1 for task in tasks if task.is_done)  # Manual filtering for lists
 
         # Slice the tasks list to get the first 5
         tasks = tasks[:5]
@@ -164,7 +182,7 @@ def dashboard_view(request):
         ip_address = get_client_ip(request)
         tasks = UnloggedUserTask.objects.filter(ip_address=ip_address).order_by('-created_at')
 
-        # Calculate completed tasks count before slicing
+        # Calculate completed tasks count
         completed_task_count = tasks.filter(is_done=True).count()
 
         # Slice the tasks list to get the first 5
@@ -175,7 +193,6 @@ def dashboard_view(request):
         context['completed_task_count'] = completed_task_count  # Add completed task count here
 
         return render(request, 'index.html', context)
-
 
 @login_required
 def user_projects_view(request):
@@ -377,18 +394,26 @@ def accept_invitation(request, token):
     # Retrieve the invitation
     invitation = get_object_or_404(Invitation, token=token, accepted=False)
 
-
-    project = invitation.project
-    request.user.role == 'Product Owner'
     # Add the logged-in user to the project's members
-    project.members.add(request.user)
-    
+    project = invitation.project
+    if request.user not in project.members.all():  # Avoid duplicate additions
+        project.members.add(request.user)
+    else:
+        messages.warning(request, "You are already a member of this project.")
+
+    # Check the role specified in the invitation
+    if invitation.role == 'product_owner':
+        # Assign "Product Owner" permissions (if applicable) or simply acknowledge
+        messages.success(request, "You have joined the project as the Product Owner.")
+    elif invitation.role == 'team_member':
+        # Acknowledge the user as a team member
+        messages.success(request, "You have joined the project as a Team Member.")
+
     # Mark the invitation as accepted
     invitation.accepted = True
     invitation.save()
 
-    return render(request, 'invitation_accepted.html', {'project': invitation.project})
-
+    return render(request, 'invitation_accepted.html', {'project': project})
 
 
 @login_required
@@ -591,14 +616,10 @@ from django.conf import settings
 from .models import SubscriptionOrder
 
 def pay(request):
-    try:
-        # Step 1: Validate and parse the amount
-        amount = 300  # Set amount to 300 directly
-        print(f"Amount: {amount}")  # Log to check the value
-        if amount <= 0:
-            raise ValueError('Amount must be greater than zero.')
-    except ValueError as e:
-        messages.error(request, f'Invalid amount: {e}')
+    # Step 1: Set and Validate the Amount
+    amount = 300  # Fixed amount in EGP
+    if amount <= 0:
+        messages.error(request, 'Invalid amount. Must be greater than zero.')
         return redirect('dashboard')
 
     # Step 2: Get Auth Token
@@ -609,64 +630,59 @@ def pay(request):
         )
         auth_response.raise_for_status()
         auth_token = auth_response.json().get('token')
-        print(f"Auth Response: {auth_response.status_code}, {auth_response.json()}")
         if not auth_token:
-            raise ValueError('No auth token received.')
+            raise ValueError('No auth token received from Paymob.')
     except (requests.exceptions.RequestException, ValueError) as e:
-        messages.error(request, f'Error while getting auth token: {e}')
+        messages.error(request, f'Error obtaining auth token: {e}')
         return redirect('dashboard')
-
-    # Generate a unique order ID
-    unique_order_id = str(uuid.uuid4())
 
     # Step 3: Create Order
     try:
+        unique_order_id = str(uuid.uuid4())
         order_response = requests.post(
             'https://accept.paymobsolutions.com/api/ecommerce/orders',
             json={
                 'auth_token': auth_token,
                 'delivery_needed': False,
-                'amount_cents': int(amount * 100),  # 300 * 100 = 30000 cents
+                'amount_cents': amount * 100,  # Convert to cents
                 'currency': 'EGP',
-                'merchant_order_id': unique_order_id
+                'merchant_order_id': unique_order_id,
             }
         )
         order_response.raise_for_status()
         order_id = order_response.json().get('id')
-        print(f"Order Response: {order_response.status_code}, {order_response.json()}")
         if not order_id:
-            raise ValueError('No order ID received.')
+            raise ValueError('No order ID received from Paymob.')
     except (requests.exceptions.RequestException, ValueError) as e:
-        messages.error(request, f'Error while creating the order: {e}')
+        messages.error(request, f'Error creating order: {e}')
         return redirect('dashboard')
 
     # Step 4: Generate Payment Key
     try:
         billing_data = {
-            'first_name': request.user.first_name,
-            'last_name': request.user.last_name,
-            'street': '123 Main St',  # Replace with actual data
+            'first_name': request.user.first_name or 'First',
+            'last_name': request.user.last_name or 'Last',
+            'street': '123 Main St',  # Replace with real data
             'building': '1',
             'floor': '1',
             'apartment': '1A',
             'city': 'Cairo',
             'state': 'Cairo',
-            'country': 'EGY',  # ISO 3166-1 alpha-3 country code
-            'postal_code': '3753450',  # Replace with actual data
-            'email': request.user.email,
-            'phone_number': '01145871860'
+            'country': 'EGY',  # ISO code
+            'postal_code': '3753450',
+            'email': request.user.email or 'user@example.com',
+            'phone_number': '01145871860',
         }
-
         payment_key_response = requests.post(
             'https://accept.paymobsolutions.com/api/acceptance/payment_keys',
             json={
                 'auth_token': auth_token,
-                'amount_cents': int(amount * 100),
+                'amount_cents': amount * 100,
                 'expiration': 3600,
                 'order_id': order_id,
                 'currency': 'EGP',
                 'integration_id': settings.PAYMOB_INTEGRATION_ID,
-                'billing_data': billing_data
+                'billing_data': billing_data,
             }
         )
         payment_key_response.raise_for_status()
@@ -674,30 +690,60 @@ def pay(request):
         if not payment_key:
             raise ValueError('No payment key received.')
     except (requests.exceptions.RequestException, ValueError) as e:
-        messages.error(request, f'Error while generating the payment key: {e}')
+        messages.error(request, f'Error generating payment key: {e}')
         return redirect('dashboard')
 
-    # Step 5: Create SubscriptionOrder model instance
+    # Step 5: Create Subscription Order
     try:
         subscription_order = SubscriptionOrder.objects.create(
             user=request.user,
             payment_status='Pending',
             payment_key=payment_key,
-            amount_cents=int(amount * 100),  # 300 * 100 = 30000 cents
-            payment_url=f'https://accept.paymobsolutions.com/api/acceptance/iframes/{settings.PAYMOB_IFRAME_ID}?payment_token={payment_key}',
+            amount_cents=amount * 100,
         )
-        subscription_order.save()
     except Exception as e:
-        messages.error(request, f'Error while creating the subscription order: {e}')
+        messages.error(request, f'Error creating subscription order: {e}')
         return redirect('dashboard')
 
-    # Step 6: Redirect to Paymob iframe
+    # Step 6: Redirect to Payment Page
     payment_url = f'https://accept.paymobsolutions.com/api/acceptance/iframes/{settings.PAYMOB_IFRAME_ID}?payment_token={payment_key}'
-    print(f"Redirecting to Paymob iframe: {payment_url}")
-
-    # Redirect the user to the payment page
     return redirect(payment_url)
 
+
+def payment_result(request):
+    # Extract payment result data
+    payment_data = request.POST
+    payment_key = payment_data.get('payment_token')
+    payment_status = payment_data.get('success', 'false') == 'true'
+
+    try:
+        # Fetch the related subscription order
+        subscription_order = SubscriptionOrder.objects.filter(payment_key=payment_key).first()
+        if not subscription_order:
+            messages.error(request, 'Payment not found.')
+            return redirect('dashboard')
+
+        # Update payment and subscription details
+        if payment_status:
+            subscription_order.payment_status = 'Completed'
+            subscription_order.save()
+
+            # Update user's subscription
+            user = subscription_order.user
+            user.subscription_type = 'pro'
+            user.pro_subscription_date = timezone.now().date()
+            user.subscription_end_date = user.pro_subscription_date + timedelta(days=30)
+            user.save()
+
+            messages.success(request, 'Payment successful! Welcome to Pro membership.')
+        else:
+            subscription_order.payment_status = 'Failed'
+            subscription_order.save()
+            messages.error(request, 'Payment failed. Please try again.')
+    except Exception as e:
+        messages.error(request, f'Error processing payment result: {e}')
+
+    return redirect('dashboard')
 
 def payment_result(request):
     # Handle payment result callback
