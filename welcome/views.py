@@ -422,18 +422,12 @@ def accept_invitation(request, token):
 @login_required
 def upload_task_file(request, task_id):
     task = get_object_or_404(ProUserTask, id=task_id)
-    
-    if request.method == 'POST':
-        if 'file' in request.FILES:
-            uploaded_file = request.FILES['file']
-            task.uploaded_file = uploaded_file  # Assuming ProUserTask has a file field
-            task.save()
-            return JsonResponse({'message': 'File uploaded successfully'})
-        else:
-            return JsonResponse({'error': 'No file provided'}, status=400)
-    
-    return JsonResponse({'error': 'Invalid request. Use POST with a file.'}, status=400)
-
+    if request.method == 'POST' and request.FILES.get('file'):
+        uploaded_file = request.FILES['file']
+        task.uploaded_file = uploaded_file  # Assuming Task model has a file field
+        task.save()
+        return JsonResponse({'message': 'File uploaded successfully'})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 from django.http import HttpResponse, Http404
 import os
