@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pro Subscription</title>
+    <link href="{% static 'bootstrap.css' %}" rel="stylesheet">
+    <link href="{% static 'custom.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h1>Welcome, {{ user.username }}</h1>
+                <p class="alert alert-success">
+                    You are already a Pro member. Enjoy your premium features!
+                </p>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
