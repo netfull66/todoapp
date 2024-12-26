@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing...</title>
+    <style>
+        #progress-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+        }
+
+        #progress-bar {
+            width: 0;
+            height: 30px;
+            background-color: green;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+
+        #message {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>We are Processing...</h1>
+    <div id="progress-container">
+        <div id="progress-bar">0%</div>
+    </div>
+    <p id="message">Please wait, your accounts are being created.</p>
+
+    <script>
+        let progress = 0;
+
+        // Poll the server for progress updates
+        function checkProgress() {
+            fetch('/get_progress/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.progress !== undefined) {
+                        progress = data.progress;
+                        document.getElementById('progress-bar').style.width = progress + '%';
+                        document.getElementById('progress-bar').textContent = progress + '%';
+                    }
+                    if (progress < 100) {
+                        setTimeout(checkProgress, 1000);  // Poll every second
+                    } else {
+                        document.getElementById('message').textContent = 'Account creation complete!';
+                    }
+                });
+        }
+
+        // Start polling when the page loads
+        window.onload = checkProgress;
+    </script>
+</body>
+</html>

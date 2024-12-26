@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser, UnloggedUserTask, LoggedUserTask, ProUserTask, Project, TaskFeedback, Invitation
+from .models import CustomUser, UnloggedUserTask, LoggedUserTask, ProUserTask, Project, TaskFeedback, Invitation,MemberProfile
 
 # Register the CustomUser model (since it's a custom user model, we use UserAdmin for it)
 from django.contrib.auth.admin import UserAdmin
@@ -24,3 +24,5 @@ admin.site.register(ProUserTask)
 admin.site.register(Project)
 admin.site.register(TaskFeedback)
 admin.site.register(Invitation)
+admin.site.register(MemberProfile)
+

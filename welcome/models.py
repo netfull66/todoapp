@@ -19,8 +19,8 @@ class CustomUser(AbstractUser):
         choices=[('programming', 'Programming'), ('education', 'Education'), ('crm', 'CRM')],
         null=True
     )
-    pro_subscription_date = models.DateField(null=True, blank=True)  # Track last subscription to Pro
-    subscription_end_date = models.DateField(null=True, blank=True)  # New field
+    pro_subscription_date = models.DateField(null=True, blank=True)
+    subscription_end_date = models.DateField(null=True, blank=True)
     groups = models.ManyToManyField(
         Group,
         related_name="custom_user_groups",
@@ -32,6 +32,10 @@ class CustomUser(AbstractUser):
         blank=True
     )
 
+class MemberProfile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="profile")
+    job_description = models.TextField()
+    role = models.TextField()
 # Model for unlogged user tasks
 class UnloggedUserTask(models.Model):
     ip_address = models.GenericIPAddressField()

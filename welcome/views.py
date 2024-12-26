@@ -781,3 +781,148 @@ def payment_result(request):
         messages.error(request, f'An error occurred while updating payment status: {e}')
 
     return redirect('dashboard')
+
+
+
+
+from django.core.cache import cache
+from threading import Thread
+import time
+import pandas as pd
+import string
+import random
+from .models import CustomUser, MemberProfile
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+import os
+from pathlib import Path
+
+def process_excel(request):
+    # Construct the full file path
+    file_path = os.path.join(settings.MEDIA_ROOT, 'MOCK_DATA.xlsx')
+    file_path = Path(file_path)
+
+    # Log the resolved file path for debugging
+    print(f"Resolved file path: {file_path}")
+
+    # Check if the file exists at the resolved path
+    if not file_path.exists():
+        return JsonResponse({'error': f"The file at '{file_path}' does not exist."}, status=404)
+
+    # Set initial progress in cache
+    cache.set('progress', 0)
+
+    # Start the background task to process the Excel file
+    thread = Thread(target=create_accounts_from_excel, args=(file_path,))
+    thread.start()
+
+    # Render the loading page
+    return render(request, 'loading_page.html')
+
+def create_accounts_from_excel(file_path):
+    try:
+        data = pd.read_excel(file_path)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Excel file not found at: {file_path}")
+
+    total_rows = len(data)
+    members_data = []  # Initialize the list to store member data
+
+    for index, row in data.iterrows():
+        # Update progress in cache
+        progress = int((index / total_rows) * 100)
+        cache.set('progress', progress)
+        time.sleep(0.1)  # Simulate processing time
+
+        name = row['Name']
+        email = row['Email']
+        job_description = row['Job Description']
+        role = row['Role']
+
+        password_length = 12
+        characters = string.ascii_letters + string.digits + string.punctuation
+        password = ''.join(random.choice(characters) for _ in range(password_length))
+
+        user, created = CustomUser.objects.get_or_create(
+            username=email,
+            email=email,
+            defaults={'first_name': name.split()[0], 'last_name': ' '.join(name.split()[1:])}
+        )
+
+        if created:
+            user.set_password(password)
+            user.save()
+            send_user_credentials_email(email, password, name)  # Send email with credentials
+
+        MemberProfile.objects.update_or_create(
+            user=user,
+            defaults={'job_description': job_description, 'role': role}
+        )
+
+        # Append member data to members_data list
+        members_data.append({'Email': email, 'Password': password})
+
+    # Create Excel file after processing
+    if members_data:
+        create_members_excel(members_data)
+
+    # After processing, ensure progress is 100%
+    cache.set('progress', 100)
+
+def create_members_excel(members_data):
+    # Create Excel file with member data
+    from openpyxl import Workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.append(['Email', 'Password'])  # Add header row
+
+    for member in members_data:
+        ws.append([member['Email'], member['Password']])
+
+    wb.save(os.path.join(settings.MEDIA_ROOT, 'created_members.xlsx'))
+
+
+def get_progress(request):
+    # Return current progress from cache
+    progress = cache.get('progress', 0)
+    return JsonResponse({'progress': progress})
+
+def loading_page(request):
+    return render(request, 'loading_page.html')  # Ensure this is the loading page template
+
+def send_user_credentials_email(email, password, name):
+    """Sends email with credentials (USE WITH EXTREME CAUTION)."""
+
+    subject = "Your New Account Credentials"
+    text_content = f"""
+    Dear {name},
+
+    Your account has been created with the following credentials:
+
+    Email: {email}
+    Password: {password}
+
+    We *strongly* recommend changing your password immediately after your first login.
+
+    Sincerely,
+    The Team
+    """
+
+    html_content = f"""
+    <p>Dear {name},</p>
+    <p>Your account has been created with the following credentials:</p>
+    <ul>
+        <li>Email: {email}</li>
+        <li>Password: {password}</li>
+    </ul>
+    <p>We <strong>strongly</strong> recommend changing your password immediately after your first login.</p>
+    <p>Sincerely,<br>The Team</p>
+    """
+
+    msg = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email])
+    msg.attach_alternative(html_content, "text/html")
+    try:
+        msg.send()
+    except Exception as e:
+        print(f"Error sending email to {email}: {e}")
+
