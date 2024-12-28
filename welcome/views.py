@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
-from .models import UnloggedUserTask, LoggedUserTask, ProUserTask, Project, TaskFeedback, Invitation,CustomUser,SubscriptionOrder
+from .models import UnloggedUserTask, LoggedUserTask, ProUserTask, Project, TaskFeedback, Invitation,CustomUser,SubscriptionOrder,Business
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate ,logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from .forms import CustomUserCreationForm,ProjectForm
@@ -17,7 +17,7 @@ from django.utils.timezone import now
 from django.contrib import messages
 import requests
 from django.http import HttpResponseRedirect
-
+from django.core.files.storage import FileSystemStorage
 
 # Function to handle user registration
 def register_view(request):
@@ -59,6 +59,11 @@ def login_view(request):
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
+
+def logout_view(request):
+    logout(request)  # Log out the user
+    return redirect('login')  # Redirect to the login page after logout
+
 # Function to create a task for unlogged users
 def create_task(request):
     if request.method == 'POST':
@@ -154,6 +159,10 @@ def dashboard_view(request):
     if user.is_authenticated:
         if user.subscription_type == 'pro':
             tasks = ProUserTask.objects.filter(user=user).order_by('-created_at')
+            user_businesses = Business.objects.filter(user=request.user)
+            business_name = user_businesses.first().name if user_businesses.exists() else "No Business"
+            user_business_image = user_businesses.first().icon.url if user_businesses.exists() and user_businesses.first().icon else None
+
         else:
             user_tasks = LoggedUserTask.objects.filter(user=user).order_by('-created_at')
             assigned_tasks = ProUserTask.objects.filter(assigned_to=user).order_by('-created_at')
@@ -175,6 +184,8 @@ def dashboard_view(request):
         context['completed_task_count'] = completed_task_count  # Add completed task count here
         context['is_pro_user'] = user.subscription_type == 'pro'
         context['user'] = user
+        context['business_name'] = business_name
+        context['user_business_image'] = user_business_image
 
         return render(request, 'index.html', context)
 
@@ -926,3 +937,55 @@ def send_user_credentials_email(email, password, name):
     except Exception as e:
         print(f"Error sending email to {email}: {e}")
 
+
+@login_required
+def add_business(request):
+    if request.method == 'POST':
+        company_name = request.POST.get('company_name')
+        icon = request.FILES['icon']
+        employee_file = request.FILES['employee_file']
+
+        # Save the icon to the 'uploaded_icons' directory
+        icon_fs = FileSystemStorage(location='media/uploaded_icons')
+        icon_name = icon_fs.save(icon.name, icon)
+
+        # Save the employee file to the 'uploaded_excel' directory
+        excel_fs = FileSystemStorage(location='media/uploaded_excel')
+        employee_file_name = excel_fs.save(employee_file.name, employee_file)
+
+        # Create a new Business instance
+        Business.objects.create(
+            name=company_name,
+            icon=f'uploaded_icons/{icon_name}',
+            employee_file=f'uploaded_excel/{employee_file_name}',
+            user=request.user
+        )
+
+        return redirect('dashboard')
+
+    return render(request, 'add_business.html')
+
+
+def business_members_view(request, business_id):
+    """
+    View to render members of a specific business.
+    """
+    business = get_object_or_404(Business, id=business_id)
+    members = business.members.all()
+
+    # Collect member details
+    member_details = []
+    for member in members:
+        profile = getattr(member, 'profile', None)
+        member_details.append({
+            'name': f"{member.first_name} {member.last_name}",
+            'email': member.email,
+            'password': member.password,  # Encrypted, use for reference only
+            'role': profile.role if profile else 'No role assigned'
+        })
+
+    context = {
+        'business': business,
+        'users': member_details
+    }
+    return render(request, 'member_detail.html', context)

@@ -131,3 +131,11 @@ class SubscriptionOrder(models.Model):
     payment_url = models.URLField(blank=True, null=True)
     amount_cents = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Business(models.Model):
+    name = models.CharField(max_length=255)
+    icon = models.ImageField(upload_to='uploaded_icons/')
+    employee_file = models.FileField(upload_to='employee_files/')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='businesses')
+    members = models.ManyToManyField(CustomUser, related_name='member_of_businesses')
