@@ -808,9 +808,8 @@ from django.conf import settings
 import os
 from pathlib import Path
 
-def process_excel(request):
+def process_excel(request,file_path):
     # Construct the full file path
-    file_path = os.path.join(settings.MEDIA_ROOT, 'MOCK_DATA.xlsx')
     file_path = Path(file_path)
 
     # Log the resolved file path for debugging
@@ -831,10 +830,39 @@ def process_excel(request):
     return render(request, 'loading_page.html')
 
 def create_accounts_from_excel(file_path):
+    # Define a mapping of possible column names to the expected database fields
+    column_mapping = {
+        'Full Name': 'Name',
+        'Employee Name': 'Name',
+        'Employee Names': 'Name',
+        'Name': 'Name',
+        'Email Address': 'Email',
+        'Email': 'Email',
+        'Emails': 'Email',
+        'Role Type': 'Role',
+        'User Role': 'Role',
+        'Role': 'Role',
+        'Job Title': 'Job Description',
+        'Job Description': 'Job Description',
+        'Description': 'Job Description',
+    }
+
     try:
         data = pd.read_excel(file_path)
     except FileNotFoundError:
         raise FileNotFoundError(f"Excel file not found at: {file_path}")
+
+    # Standardize column names
+    standardized_columns = {
+        original: column_mapping.get(original, original) for original in data.columns
+    }
+    data.rename(columns=standardized_columns, inplace=True)
+
+    # Validate that all required columns are present
+    required_columns = ['Name', 'Email', 'Job Description', 'Role']
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    if missing_columns:
+        raise ValueError(f"The following required columns are missing after standardization: {missing_columns}")
 
     total_rows = len(data)
     members_data = []  # Initialize the list to store member data
@@ -961,9 +989,12 @@ def add_business(request):
             user=request.user
         )
 
-        return redirect('dashboard')
+        # Pass the uploaded employee file path to the process_excel function
+        employee_file_path = excel_fs.path(employee_file_name)
+        return process_excel(request, employee_file_path)
 
     return render(request, 'add_business.html')
+
 
 
 def business_members_view(request, business_id):
